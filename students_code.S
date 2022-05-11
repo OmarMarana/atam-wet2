@@ -7,11 +7,12 @@
 read_input:
   pushq %rbp
   movq %rsp, %rbp
+  pushq %rdi
   
-  mov path, %rdi
+  mov $path, %rdi
   call get_path
 
-  mov path, %rdi
+  mov $path, %rdi
   mov $2, %rax
   mov $0, %rsi
   syscall # open_path
@@ -22,17 +23,22 @@ read_input:
   mov $0, %rax
   mov $8, %rdx
   syscall # read_file
-  mov $0, %rdx
+
   mov $0, %rcx
+
   loop: 
     lea (%rsi, %rcx, 1), %rbx
-    cmp $0xa, (%rbx)
+    cmpb $0xa, (%rbx)
     je exit
     inc %rcx
+    jmp loop
 
   exit:
     mov $0x0, (%rbx)
-
+    mov %rsi, %rdi
+    call atam_atol
+    
+    
   ret
 
 hamming_weight:
