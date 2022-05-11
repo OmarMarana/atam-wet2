@@ -9,10 +9,10 @@ read_input:
   movq %rsp, %rbp
   pushq %rdi
   
-  mov $path, %rdi
+  lea (path), %rdi
   call get_path
 
-  mov $path, %rdi
+  lea (path), %rdi
   mov $2, %rax
   mov $0, %rsi
   syscall # open_path
@@ -20,23 +20,31 @@ read_input:
   mov %rax, %rdi
   pushq %rdi
   sub $0x8, %rsp
-  lea -8(%rbp,,), %rsi
+  mov %rbp, %rsi
+  sub $8, %rsi
   movq %rsi, %r8 # r8 is the base of the null ter string
   mov $0, %rax
   mov $1, %rdx
+
   loop:
     syscall # read_file
-    movb (%rsi), %r11b
+    mov $0, %rax
+    movb (%rsi, %rax), %r11b
     cmpb $0xa, %r11b
     je end_read
     inc %rsi
     jmp loop
   
 end_read:
-  mov 0x0, (%rsi)
+  cmp %rsi, %r8
+  je exit
+  movb $0x0, (%rsi)
   mov %r8, %rdi
 
   call atam_atol
+
+  cmp $0, %rax
+  je exit
 
   mov %rax, %rdx
   mov $0, %rax
@@ -55,6 +63,7 @@ end_read:
   mov $3, %rax
   syscall # close file
 
+exit:
   leave
   ret
 
@@ -82,6 +91,9 @@ end_read:
 
 
 hamming_weight:
+  #rdi is codewordi
+  #rsi is len
+
   ret
 
 negate_first_k:
