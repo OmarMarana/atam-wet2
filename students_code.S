@@ -1,5 +1,5 @@
-.global hamming_weight, negate_first_k, bring_balance_to_the_word, read_input
-
+.global read_input
+# , hamming_weight, negate_first_k, bring_balance_to_the_word,
 .section .bss
 .lcomm path, 1024
 
@@ -10,10 +10,9 @@ read_input:
   movq %rsp, %rbp
   pushq %rdi
   
-  leaq (path), %rdi
+  leaq path(%rip), %rdi
   call get_path
-
-  leaq (path), %rdi
+  leaq path(%rip), %rdi
   mov $2, %rax
   mov $0, %rsi
   syscall # open_path
@@ -21,20 +20,19 @@ read_input:
   mov %rax, %rdi
   pushq %rdi
   sub $0x8, %rsp
-  mov %rbp, %rsi
-  sub $8, %rsi
+  mov %rsp, %rsi
   movq %rsi, %r8 # r8 is the base of the null ter string
   mov $0, %rax
   mov $1, %rdx
 
-  loop:
-    syscall # read_file
-    mov $0, %rax
-    movb (%rsi, %rax), %r11b
-    cmpb $0xa, %r11b
-    je end_read
-    inc %rsi
-    jmp loop
+loop:
+  syscall # read_file
+  mov $0, %rax
+  movb (%rsi, %rax), %r11b
+  cmpb $0xa, %r11b
+  je end_read
+  inc %rsi
+  jmp loop
   
 end_read:
   cmp %rsi, %r8
@@ -43,53 +41,26 @@ end_read:
   mov %r8, %rdi
 
   call atam_atol
-
   cmp $0, %rax
   je exit
-
   mov %rax, %rdx
   mov $0, %rax
   addq $8, %rsp
   popq %rdi
   popq %rsi
 
-  syscall # as omar said it will continue from where it got
-
-  mov %rdx, %rax   
-  cdq
-  mov $8, %r11d      # ##################################
-  div %r11d        # check for silly scummy bugs here
-                        # ##################################
+  syscall # read the requested n bytes
 
   mov $3, %rax
   syscall # close file
+  mov %rdx, %rax   
+  cdq
+  mov $8, %r11d 
+  div %r11d 
 
 exit:
   leave
   ret
-
-//  mov %rax, %rdi 
-//  sub $0x8, %rsp
-// lea -8(%rbp,,), %rsi
-//  mov $0, %rax
-  ; mov $8, %rdx
-  ; syscall # read_file
-
-//  mov $0, %rcx
-
-//  loop: 
-//    lea (%rsi, %rcx, 1), %rbx
-//    cmpb $0xa, (%rbx)
-//    je exit
-//    inc %rcx
-//    jmp loop
-
-//  exit:
-//    mov $0x0, (%rbx)
-//    mov %rsi, %rdi
-//    call atam_atol
-
-
 
 hamming_weight:
   # rdi is &codewordi
@@ -97,13 +68,13 @@ hamming_weight:
   pushq %rbp
   movq %rsp, %rbp
   xor %rcx, %rcx
-  add $1, %rax
-  add $2, %rbx
+  mov $1, %rax
+  mov $2, %r11
   xor %r9, %r9
   loop_1:
     cmp %rcx, %rsi
-    jae end
-    leaq(%rdi, %rcx, 8), %rdx
+    jae end_hamming_weight
+    leaq (%rdi, %rcx, 8), %rdx
     xor %r8, %r8
     inc %rcx
     jmp loop_2
@@ -117,15 +88,15 @@ hamming_weight:
     inc %r8
     cmp $0, %r10
     jb add
-    mul %rbx
+    mul %r11
     jmp loop_2
 
   add:
     inc %r9
-    mul %rbx
+    mul %r11
     jmp loop_2
 
-  end:
+  end_hamming_weight:
     leave
     ret
 
@@ -136,21 +107,21 @@ negate_first_k:
   movq %rsp, %rbp
   xor %rcx, %rcx
   cmp %rcx, %rsi
-  jae end
+  jae end_negate_first_k
   inc %rcx
   mov $1, %rax
   mov $2, %rbx
   xor %rax, %rdi
   inc %rcx
-  loop:
+  loop_negate_first_k:
     cmp %rcx, %rsi
-    jae end
+    jae end_negate_first_k
     mul %rbx
     xor %rax, %rdi
     inc %rcx
-    ja loop
+    ja loop_negate_first_k
 
-  end:
+  end_negate_first_k:
     mov %rdi, %rax
     leave
     ret
@@ -166,7 +137,7 @@ bring_balance_to_the_word:
   mov $2, %rbx
   div %rbx
   mov %rax, %rsi  # rsi /= 2
-  loop:
+  loop_bring_balance_to_the_word:
     cmp %rcx, %rsi
     jae end
     call hamming_weight
