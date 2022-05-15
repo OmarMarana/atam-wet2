@@ -67,36 +67,36 @@ hamming_weight:
   # rsi is len
   pushq %rbp
   movq %rsp, %rbp
+  pushq %rbx
   xor %rcx, %rcx
   mov $1, %rax
-  mov $2, %r11
   xor %r9, %r9
   loop_1:
     cmp %rcx, %rsi
-    jae end_hamming_weight
-    leaq (%rdi, %rcx, 8), %rdx
+    je end_hamming_weight
+    leaq (%rdi, %rcx, 8), %rbx
     xor %r8, %r8
     inc %rcx
     jmp loop_2
 
   loop_2:
-    cmp $8, %r8
-    jae loop_1
+    cmp $64, %r8
+    je loop_1
     mov %rax, %r10
-    xor %rdx, %r10
-    And %rax, %r10
+    and (%rbx), %r10
     inc %r8
-    cmp $0, %r10
-    jb add
-    mul %r11
+    sal $1, %rax
+    cmp $1, %r10
+    je add
     jmp loop_2
 
   add:
     inc %r9
-    mul %r11
     jmp loop_2
 
   end_hamming_weight:
+    pop %rbx
+    mov %r9, %rax
     leave
     ret
 
@@ -105,21 +105,20 @@ negate_first_k:
   # rsi is k
   pushq %rbp
   movq %rsp, %rbp
+  
   xor %rcx, %rcx
   cmp %rcx, %rsi
-  jae end_negate_first_k
+  je end_negate_first_k
   inc %rcx
   mov $1, %rax
-  mov $2, %rbx
   xor %rax, %rdi
-  inc %rcx
   loop_negate_first_k:
-    cmp %rcx, %rsi
-    jae end_negate_first_k
-    mul %rbx
+    cmp %rsi, %rcx
+    je end_negate_first_k
+    sal $1, %rax
     xor %rax, %rdi
     inc %rcx
-    ja loop_negate_first_k
+    jmp loop_negate_first_k
 
   end_negate_first_k:
     mov %rdi, %rax
